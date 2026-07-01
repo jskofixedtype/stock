@@ -55,10 +55,13 @@
     var d = IBCalc.computeDerived(state);
     var orders = IBCalc.computeOrders(state, price, d);
 
-    // 이력 파생 시 입력 필드에 반영 + 읽기전용 표시
+    // 이력 파생 시에만 입력 필드에 값을 덮어쓴다.
+    // (수동 입력 중에는 재대입하지 않아야 소수점 등 입력 도중 커서가 튀지 않음)
     var derived = !!state._derived;
-    $('avgPrice').value = derived ? (Math.round(state.avgPrice * 100) / 100) : $('avgPrice').value;
-    $('quantity').value = derived ? Math.round(state.quantity) : $('quantity').value;
+    if (derived) {
+      $('avgPrice').value = Math.round(state.avgPrice * 100) / 100;
+      $('quantity').value = Math.round(state.quantity);
+    }
     $('avgPrice').readOnly = derived;
     $('quantity').readOnly = derived;
     $('stateSource').textContent = derived
