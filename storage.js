@@ -9,7 +9,9 @@
   var KEYS = {
     settings: PREFIX + 'settings',
     history: PREFIX + 'history',
-    apiKey: PREFIX + 'apiKey'
+    apiKey: PREFIX + 'apiKey',
+    driveClientId: PREFIX + 'driveClientId',
+    driveAutoSync: PREFIX + 'driveAutoSync'
   };
 
   function available() {
@@ -51,6 +53,10 @@
     loadHistory: function () { return get(KEYS.history, []); },
     saveHistory: function (h) { return set(KEYS.history, h); },
     loadApiKey: function () { return get(KEYS.apiKey, ''); },
-    saveApiKey: function (k) { return set(KEYS.apiKey, k); }
+    saveApiKey: function (k) { return set(KEYS.apiKey, k); },
+    loadDriveClientId: function () { return get(KEYS.driveClientId, ''); },
+    saveDriveClientId: function (k) { return set(KEYS.driveClientId, k); },
+    loadDriveAutoSync: function () { return get(KEYS.driveAutoSync, false); },
+    saveDriveAutoSync: function (v) { return set(KEYS.driveAutoSync, !!v); }
   };
 })(typeof window !== 'undefined' ? window : this);

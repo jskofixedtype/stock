@@ -190,5 +190,14 @@ input:focus, select:focus { outline: 2px solid var(--avg); outline-offset: -1px;
 .viz-label-name.current { fill: var(--current); }
 .viz-label-val { font-size: 11px; fill: var(--text-secondary); font-variant-numeric: tabular-nums; }
 
+/* Google Drive 동기화 */
+.drive-actions { display: flex; flex-wrap: wrap; gap: 8px; margin: 10px 0; }
+.checkbox { flex-direction: row; align-items: center; gap: 8px; font-size: 0.85rem; color: var(--text-secondary); }
+.checkbox input { width: auto; }
+.btn:disabled { opacity: 0.5; cursor: not-allowed; }
+#gStatus.ok { color: var(--good); }
+#gStatus.err { color: var(--critical); }
+a { color: var(--avg); }
+
 .app-footer { text-align: center; }
 .app-footer p { font-size: 0.72rem; color: var(--muted); }

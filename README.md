@@ -39,16 +39,51 @@ TQQQ 무한매수법의 **매수/매도 가격·수량을 자동 계산**하는 
 2. Source: 원하는 브랜치(예: 기본 브랜치) / 루트(`/`) 선택 후 저장
 3. 발급된 URL을 안드로이드 브라우저로 접속 (홈 화면에 추가하면 앱처럼 사용 가능)
 
+## Google Drive 동기화 설정
+
+거래 이력·설정을 **본인 Google Drive**에 백업/복원하고 기기 간 공유할 수 있습니다.
+서버 없는 클라이언트 앱이라 Google OAuth Client ID가 필요합니다. 앱은 검증이
+필요 없는 `drive.file` 스코프만 사용하므로 **자기가 만든 백업 파일만** 접근하며,
+Drive의 다른 파일은 볼 수 없습니다. (Finnhub 키는 동기화되지 않습니다.)
+
+**1) Google Cloud 프로젝트 준비**
+
+1. <https://console.cloud.google.com> 에서 프로젝트 생성
+2. **API 및 서비스 → 라이브러리**에서 **Google Drive API** 사용 설정
+3. **OAuth 동의 화면**: User Type `External` 선택 후 앱 이름/이메일 입력.
+   게시 상태가 `테스트`이면 **테스트 사용자**에 본인 Google 계정을 추가
+   (또는 `게시`로 전환 — `drive.file`은 비민감 스코프라 검증 없이 사용 가능)
+
+**2) OAuth Client ID 발급**
+
+1. **사용자 인증 정보 → 사용자 인증 정보 만들기 → OAuth 클라이언트 ID**
+2. 애플리케이션 유형 **웹 애플리케이션**
+3. **승인된 자바스크립트 원본**에 앱을 여는 주소를 추가:
+   - GitHub Pages: `https://<사용자>.github.io`
+   - 로컬 테스트: `http://localhost:8000`
+   - (`file://` 로 연 페이지에서는 OAuth가 동작하지 않습니다 — 서버/Pages로 여세요)
+4. 발급된 **클라이언트 ID**(`....apps.googleusercontent.com`) 복사
+
+**3) 앱에서 사용**
+
+1. 앱의 **Google Drive 동기화 → Google OAuth Client ID** 입력란에 붙여넣기
+2. **연결** → Google 로그인/동의 (미검증 앱 경고가 보이면 "고급 → 계속" 진행)
+3. **Drive에 백업** / **Drive에서 복원** 버튼 사용
+4. **변경 시 자동 백업**을 켜면 설정·이력 변경 시 자동으로 백업됩니다
+
+> 백업 파일 이름은 `infinite-buying-backup.json` 이며 본인 Drive에 저장됩니다.
+
 ## 파일 구조
 
 | 파일 | 역할 |
 |---|---|
-| `index.html` | 대시보드 마크업 (설정/시세/요약/MTS주문/차트/이력) |
+| `index.html` | 대시보드 마크업 (설정/시세/요약/MTS주문/차트/이력/Drive) |
 | `styles.css` | 모바일 우선 반응형 + 다크/라이트, 차트 색상 |
 | `calc.js` | 계산 엔진(순수 함수) — 파생값·오늘의 주문 |
 | `history.js` | 거래 이력 + 평단/수량/진행률/실현손익 재계산 |
 | `chart.js` | 기준가 차트 (인라인 SVG) |
 | `price.js` | Finnhub 시세 조회 |
+| `gdrive.js` | Google Drive 동기화 (OAuth + Drive REST) |
 | `storage.js` | localStorage 저장/복원 |
 | `app.js` | 이벤트/상태/렌더 통합 (진입점) |
 

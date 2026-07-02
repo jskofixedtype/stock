@@ -142,6 +142,25 @@
       </div>
     </section>
 
+    <!-- 7. Google Drive 동기화 -->
+    <section class="card">
+      <h2>Google Drive 동기화</h2>
+      <label>Google OAuth Client ID
+        <input type="text" id="gClientId" placeholder="xxxx.apps.googleusercontent.com" autocomplete="off">
+      </label>
+      <div class="drive-actions">
+        <button type="button" id="gConnect" class="btn">연결</button>
+        <button type="button" id="gBackup" class="btn btn-ghost" disabled>Drive에 백업</button>
+        <button type="button" id="gRestore" class="btn btn-ghost" disabled>Drive에서 복원</button>
+        <button type="button" id="gSignout" class="btn btn-ghost" disabled>연결 해제</button>
+      </div>
+      <label class="checkbox">
+        <input type="checkbox" id="gAutoSync"> 변경 시 자동 백업
+      </label>
+      <p class="hint" id="gStatus">연결되지 않음. 설정·거래 이력을 본인 Google Drive에 백업/복원합니다.</p>
+      <p class="hint">설정 방법은 <a href="README.md#google-drive-동기화-설정" target="_blank" rel="noopener">README</a> 참고. (Finnhub 키는 동기화되지 않습니다.)</p>
+    </section>
+
     <footer class="app-footer">
       <p>계산 참고용 도구입니다. 실제 주문 전 반드시 값을 검토하세요.</p>
     </footer>
@@ -152,6 +171,7 @@
   <script src="price.js"></script>
   <script src="history.js"></script>
   <script src="chart.js"></script>
+  <script src="gdrive.js"></script>
   <script src="app.js"></script>
 </body>
 </html>

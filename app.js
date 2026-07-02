@@ -157,6 +157,102 @@
     });
   }
 
+  /* ---------- Google Drive 동기화 ---------- */
+  var autoSyncTimer = null;
+
+  // 동기화 대상: 설정 + 거래 이력 (Finnhub 키는 포함하지 않음)
+  function gatherData() {
+    return {
+      version: 1,
+      savedAt: new Date().toISOString(),
+      settings: {
+        seed: $('seed').value,
+        divisions: $('divisions').value,
+        targetRate: $('targetRate').value,
+        avgPrice: $('avgPrice').value,
+        quantity: $('quantity').value,
+        mCurrent: $('mCurrent').value,
+        mPrev: $('mPrev').value
+      },
+      history: history
+    };
+  }
+
+  function applyData(data) {
+    if (!data) return false;
+    var s = data.settings || {};
+    if ($('seed')) $('seed').value = s.seed || '';
+    if (s.divisions) $('divisions').value = s.divisions;
+    $('targetRate').value = s.targetRate || '';
+    $('avgPrice').value = s.avgPrice || '';
+    $('quantity').value = s.quantity || '';
+    $('mCurrent').value = s.mCurrent || '';
+    $('mPrev').value = s.mPrev || '';
+    history = Array.isArray(data.history) ? data.history : [];
+    IBStore.saveSettings(s);
+    IBStore.saveHistory(history);
+    renderAll();
+    return true;
+  }
+
+  function driveStatus(msg, kind) {
+    var el = $('gStatus');
+    el.textContent = msg;
+    el.classList.remove('ok', 'err');
+    if (kind) el.classList.add(kind);
+  }
+
+  function updateDriveButtons() {
+    var connected = IBDrive.isConnected();
+    $('gBackup').disabled = !connected;
+    $('gRestore').disabled = !connected;
+    $('gSignout').disabled = !connected;
+  }
+
+  function driveConnect() {
+    var cid = $('gClientId').value.trim();
+    if (!cid) { driveStatus('Client ID를 입력하세요.', 'err'); return; }
+    IBStore.saveDriveClientId(cid);
+    IBDrive.setClientId(cid);
+    driveStatus('연결 중…');
+    IBDrive.connect().then(function () {
+      driveStatus('연결됨. 백업/복원을 사용할 수 있습니다.', 'ok');
+      updateDriveButtons();
+    }).catch(function (err) {
+      driveStatus('연결 실패: ' + err.message, 'err');
+      updateDriveButtons();
+    });
+  }
+
+  function driveBackup(silent) {
+    if (!IBDrive.isConnected()) { if (!silent) driveStatus('먼저 연결하세요.', 'err'); return; }
+    if (!silent) driveStatus('백업 중…');
+    IBDrive.backup(gatherData()).then(function () {
+      driveStatus('백업 완료: ' + new Date().toLocaleTimeString(), 'ok');
+    }).catch(function (err) {
+      driveStatus('백업 실패: ' + err.message, 'err');
+    });
+  }
+
+  function driveRestore() {
+    if (!IBDrive.isConnected()) { driveStatus('먼저 연결하세요.', 'err'); return; }
+    driveStatus('복원 중…');
+    IBDrive.restore().then(function (data) {
+      if (!data) { driveStatus('Drive에 백업 파일이 없습니다.', 'err'); return; }
+      applyData(data);
+      driveStatus('복원 완료 (' + (data.savedAt ? new Date(data.savedAt).toLocaleString() : '') + ')', 'ok');
+      updateDriveButtons();
+    }).catch(function (err) {
+      driveStatus('복원 실패: ' + err.message, 'err');
+    });
+  }
+
+  function maybeAutoSync() {
+    if (!$('gAutoSync').checked || !IBDrive.isConnected()) return;
+    clearTimeout(autoSyncTimer);
+    autoSyncTimer = setTimeout(function () { driveBackup(true); }, 1500);
+  }
+
   /* ---------- 저장/복원 ---------- */
   function saveSettings() {
     IBStore.saveSettings({
@@ -184,6 +280,11 @@
     $('apiKey').value = IBStore.loadApiKey() || '';
     history = IBStore.loadHistory() || [];
     $('hDate').value = new Date().toISOString().slice(0, 10);
+
+    var cid = IBStore.loadDriveClientId() || '';
+    $('gClientId').value = cid;
+    if (cid) IBDrive.setClientId(cid);
+    $('gAutoSync').checked = !!IBStore.loadDriveAutoSync();
   }
 
   /* ---------- 가격 조회 ---------- */
@@ -207,7 +308,7 @@
   function bind() {
     ['seed', 'divisions', 'targetRate', 'avgPrice', 'quantity', 'mCurrent', 'mPrev']
       .forEach(function (id) {
-        $(id).addEventListener('input', function () { saveSettings(); renderAll(); });
+        $(id).addEventListener('input', function () { saveSettings(); renderAll(); maybeAutoSync(); });
       });
 
     $('apiKey').addEventListener('input', function () {
@@ -226,6 +327,7 @@
       IBStore.saveHistory(history);
       $('hPrice').value = ''; $('hQty').value = '';
       renderAll();
+      maybeAutoSync();
     });
 
     // 매수/매도 선택 시 주문유형 기본값 보정
@@ -241,6 +343,7 @@
         history.splice(i, 1);
         IBStore.saveHistory(history);
         renderAll();
+        maybeAutoSync();
       }
     });
 
@@ -250,7 +353,27 @@
         history = [];
         IBStore.saveHistory(history);
         renderAll();
+        maybeAutoSync();
       }
+    });
+
+    // Google Drive 동기화
+    $('gClientId').addEventListener('input', function () {
+      var v = $('gClientId').value.trim();
+      IBStore.saveDriveClientId(v);
+      IBDrive.setClientId(v);
+    });
+    $('gConnect').addEventListener('click', driveConnect);
+    $('gBackup').addEventListener('click', function () { driveBackup(false); });
+    $('gRestore').addEventListener('click', driveRestore);
+    $('gSignout').addEventListener('click', function () {
+      IBDrive.signOut();
+      updateDriveButtons();
+      driveStatus('연결 해제됨.', null);
+    });
+    $('gAutoSync').addEventListener('change', function () {
+      IBStore.saveDriveAutoSync($('gAutoSync').checked);
+      if ($('gAutoSync').checked) maybeAutoSync();
     });
   }
 
