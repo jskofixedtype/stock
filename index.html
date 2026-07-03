@@ -142,7 +142,18 @@
       </div>
     </section>
 
-    <!-- 7. Google Drive 동기화 -->
+    <!-- 7. 파일 백업 (JSON) -->
+    <section class="card">
+      <h2>파일 백업 (JSON)</h2>
+      <div class="drive-actions">
+        <button type="button" id="jsonExport" class="btn">내보내기</button>
+        <button type="button" id="jsonImport" class="btn btn-ghost">가져오기</button>
+        <input type="file" id="jsonFile" accept="application/json,.json" hidden>
+      </div>
+      <p class="hint" id="jsonStatus">설정·거래 이력을 JSON 파일로 저장하고 다른 기기에서 불러옵니다. (Google 설정 불필요)</p>
+    </section>
+
+    <!-- 8. Google Drive 동기화 -->
     <section class="card">
       <h2>Google Drive 동기화</h2>
       <label>Google OAuth Client ID

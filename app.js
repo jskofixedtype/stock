@@ -157,6 +157,56 @@
     });
   }
 
+  /* ---------- JSON 파일 백업 ---------- */
+  function jsonStatus(msg, kind) {
+    var el = $('jsonStatus');
+    el.textContent = msg;
+    el.classList.remove('ok', 'err');
+    if (kind) el.classList.add(kind);
+  }
+
+  function exportJson() {
+    try {
+      var data = gatherData();
+      var blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+      var url = URL.createObjectURL(blob);
+      var a = document.createElement('a');
+      a.href = url;
+      a.download = 'infinite-buying-backup-' + new Date().toISOString().slice(0, 10) + '.json';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
+      jsonStatus('내보내기 완료: ' + a.download, 'ok');
+    } catch (e) {
+      jsonStatus('내보내기 실패: ' + e.message, 'err');
+    }
+  }
+
+  function importJson(file) {
+    if (!file) return;
+    var reader = new FileReader();
+    reader.onload = function () {
+      try {
+        var data = JSON.parse(reader.result);
+        if (!data || (!data.settings && !data.history)) {
+          throw new Error('올바른 백업 파일이 아닙니다.');
+        }
+        if (!confirm('현재 설정·거래 이력을 파일 내용으로 덮어씁니다. 계속할까요?')) {
+          jsonStatus('가져오기 취소됨.', null);
+          return;
+        }
+        applyData(data);
+        jsonStatus('가져오기 완료' +
+          (data.savedAt ? ' (' + new Date(data.savedAt).toLocaleString() + ')' : ''), 'ok');
+      } catch (e) {
+        jsonStatus('가져오기 실패: ' + e.message, 'err');
+      }
+    };
+    reader.onerror = function () { jsonStatus('파일을 읽지 못했습니다.', 'err'); };
+    reader.readAsText(file);
+  }
+
   /* ---------- Google Drive 동기화 ---------- */
   var autoSyncTimer = null;
 
@@ -355,6 +405,15 @@
         renderAll();
         maybeAutoSync();
       }
+    });
+
+    // JSON 파일 백업
+    $('jsonExport').addEventListener('click', exportJson);
+    $('jsonImport').addEventListener('click', function () { $('jsonFile').click(); });
+    $('jsonFile').addEventListener('change', function (e) {
+      var f = e.target.files && e.target.files[0];
+      importJson(f);
+      e.target.value = ''; // 같은 파일 재선택 허용
     });
 
     // Google Drive 동기화
