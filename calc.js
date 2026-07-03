@@ -78,9 +78,10 @@
       buys.push(order('buy', 'LOC매수', '첫날 매수', base, q));
     } else {
       // 원리 1·2: 일일매수금액을 절반씩 양방향 LOC 매수
-      var half = dailyBuy / 2;
-      var q1 = avgPrice > 0 ? BUY_ROUND(half / avgPrice) : 0;
-      var q2 = derived.starSellPoint > 0 ? BUY_ROUND(half / derived.starSellPoint) : 0;
+      // 평단 매수: round((일일매수금액 / 지정가) / 2)
+      var q1 = avgPrice > 0 ? Math.round((dailyBuy / avgPrice) / 2) : 0;
+      // 별퍼센트 매수: floor((일일매수금액 / 지정가) / 2)
+      var q2 = derived.starSellPoint > 0 ? Math.floor((dailyBuy / derived.starSellPoint) / 2) : 0;
       buys.push(order('buy', 'LOC매수', '평단 매수', avgPrice, q1));
       buys.push(order('buy', 'LOC매수', '별퍼센트 매수', derived.starSellPoint, q2));
 
