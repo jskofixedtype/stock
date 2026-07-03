@@ -118,6 +118,8 @@ input:focus, select:focus { outline: 2px solid var(--avg); outline-offset: -1px;
 .btn-ghost { background: transparent; color: var(--text-secondary); border-color: var(--axis); }
 
 .hint { font-size: 0.75rem; color: var(--muted); margin: 8px 0 0; }
+.field-link { font-size: 0.72rem; color: var(--avg); text-decoration: none; margin-top: 2px; }
+.field-link:hover { text-decoration: underline; }
 
 /* 시세 & 요약 stat */
 .price-row { display: flex; gap: 20px; margin-bottom: 12px; }
