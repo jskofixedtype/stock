@@ -12,6 +12,7 @@
   var SELL_ROUND = Math.round;
   var FIRST_DAY_FACTOR = 1.10; // 원리 6: 첫날 기준가 = 전일 종가 × 1.10
   var SELL_UNIT = 0.25;        // 원리 3·4·5: 보유수량의 1/4 단위
+  var EXTRA_BUY_STEPS = 3;     // 주가 하락 시 1주씩 추가 매수하는 지점 수
 
   function num(v, def) {
     var n = parseFloat(v);
@@ -78,11 +79,24 @@
       buys.push(order('buy', 'LOC매수', '첫날 매수', base, q));
     } else {
       // 원리 1·2: 일일매수금액을 절반씩 양방향 LOC 매수
-      var half = dailyBuy / 2;
-      var q1 = avgPrice > 0 ? BUY_ROUND(half / avgPrice) : 0;
-      var q2 = derived.starSellPoint > 0 ? BUY_ROUND(half / derived.starSellPoint) : 0;
+      // 평단 매수: round((일일매수금액 / 지정가) / 2)
+      var q1 = avgPrice > 0 ? Math.round((dailyBuy / avgPrice) / 2) : 0;
+      // 별퍼센트 매수: floor((일일매수금액 / 지정가) / 2)
+      var q2 = derived.starSellPoint > 0 ? Math.floor((dailyBuy / derived.starSellPoint) / 2) : 0;
       buys.push(order('buy', 'LOC매수', '평단 매수', avgPrice, q1));
       buys.push(order('buy', 'LOC매수', '별퍼센트 매수', derived.starSellPoint, q2));
+
+      // 주가 하락 시 추가 매수: 종가가 평단 이하로 더 내려가 일일매수금액으로
+      // 더 많은 수량을 살 수 있는 지점마다 1주씩 LOC 매수를 추가한다.
+      // k주 추가 지정가 = floor(일일매수금액 / (기본수량 + k))  (예산 초과 방지 위해 센트 절사)
+      var baseShares = q1 + q2;
+      if (baseShares > 0 && dailyBuy > 0) {
+        for (var k = 1; k <= EXTRA_BUY_STEPS; k++) {
+          var target = baseShares + k;
+          var addPrice = Math.floor((dailyBuy / target) * 100) / 100;
+          buys.push(order('buy', 'LOC매수', k + '주 추가 매수 (누적 ' + target + '주)', addPrice, 1));
+        }
+      }
 
       // 원리 3: 별퍼센트 매도점 초과 시 보유수량 1/4 LOC 매도
       var sQ1 = SELL_ROUND(quantity * SELL_UNIT);
