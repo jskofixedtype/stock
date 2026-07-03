@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+  <meta name="theme-color" content="#1a1a19">
+  <title>무한매수법 대시보드 (TQQQ)</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="app viz-root">
+    <header class="app-header">
+      <h1>무한매수법 대시보드</h1>
+      <span class="ticker">TQQQ</span>
+    </header>
+
+    <!-- 1. 설정 입력 -->
+    <section class="card">
+      <h2>설정</h2>
+      <div class="grid">
+        <label>SEED (총 예산 $)
+          <input type="number" id="seed" inputmode="decimal" min="0" step="100" placeholder="예: 4000">
+        </label>
+        <label>분할수
+          <select id="divisions">
+            <option value="40">40</option>
+            <option value="30">30</option>
+            <option value="20">20</option>
+          </select>
+        </label>
+        <label>목표수익률 (%)
+          <input type="number" id="targetRate" inputmode="decimal" step="0.5" placeholder="예: 10">
+        </label>
+        <label>평단 ($)
+          <input type="number" id="avgPrice" inputmode="decimal" step="0.01" placeholder="자동/수동">
+        </label>
+        <label>수량 (주)
+          <input type="number" id="quantity" inputmode="numeric" step="1" placeholder="자동/수동">
+        </label>
+      </div>
+      <p class="hint" id="stateSource"></p>
+    </section>
+
+    <!-- 2. 가격 카드 -->
+    <section class="card">
+      <div class="card-head">
+        <h2>TQQQ 시세</h2>
+        <button type="button" id="refreshBtn" class="btn">새로고침</button>
+      </div>
+      <div class="price-row">
+        <div class="stat">
+          <span class="stat-label">현재가</span>
+          <span class="stat-value" id="curPrice">—</span>
+        </div>
+        <div class="stat">
+          <span class="stat-label">전일 종가</span>
+          <span class="stat-value" id="prevClose">—</span>
+        </div>
+      </div>
+      <div class="grid">
+        <label>Finnhub API 키
+          <input type="password" id="apiKey" placeholder="무료 키 입력 (localStorage 저장)" autocomplete="off">
+        </label>
+        <label>수동 현재가 ($)
+          <input type="number" id="mCurrent" inputmode="decimal" step="0.01" placeholder="API 실패 시">
+        </label>
+        <label>수동 전일종가 ($)
+          <input type="number" id="mPrev" inputmode="decimal" step="0.01" placeholder="API 실패 시">
+        </label>
+      </div>
+      <p class="hint" id="priceMsg"></p>
+    </section>
+
+    <!-- 3. 요약 -->
+    <section class="card">
+      <h2>요약</h2>
+      <div class="summary">
+        <div class="stat"><span class="stat-label">일일매수금액</span><span class="stat-value" id="sDaily">—</span></div>
+        <div class="stat"><span class="stat-label">총매수금액</span><span class="stat-value" id="sTotal">—</span></div>
+        <div class="stat"><span class="stat-label">진행률</span><span class="stat-value" id="sProgress">—</span></div>
+        <div class="stat"><span class="stat-label">회차</span><span class="stat-value" id="sRound">—</span></div>
+        <div class="stat"><span class="stat-label">매도점</span><span class="stat-value" id="sSellPoint">—</span></div>
+        <div class="stat"><span class="stat-label">별퍼센트</span><span class="stat-value" id="sStarPct">—</span></div>
+        <div class="stat"><span class="stat-label">별퍼센트 매도점</span><span class="stat-value" id="sStarPoint">—</span></div>
+        <div class="stat"><span class="stat-label">남은 예산</span><span class="stat-value" id="sRemaining">—</span></div>
+      </div>
+    </section>
+
+    <!-- 4. MTS 주문 정보 -->
+    <section class="card">
+      <h2>MTS 주문 정보</h2>
+      <div id="forceSellBanner" class="banner banner-critical" hidden></div>
+
+      <h3>매수</h3>
+      <table class="orders" id="buyTable">
+        <thead><tr><th>구분</th><th>주문유형</th><th class="num">지정가</th><th class="num">수량</th><th class="num">금액</th></tr></thead>
+        <tbody></tbody>
+      </table>
+
+      <h3>매도</h3>
+      <table class="orders" id="sellTable">
+        <thead><tr><th>구분</th><th>주문유형</th><th class="num">지정가</th><th class="num">수량</th><th class="num">금액</th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </section>
+
+    <!-- 5. 차트 -->
+    <section class="card">
+      <h2>기준가 차트</h2>
+      <div id="chart" class="chart"></div>
+    </section>
+
+    <!-- 6. 거래 이력 -->
+    <section class="card">
+      <div class="card-head">
+        <h2>거래 이력</h2>
+      </div>
+      <form id="histForm" class="hist-form">
+        <input type="date" id="hDate" required>
+        <select id="hSide">
+          <option value="buy">매수</option>
+          <option value="sell">매도</option>
+        </select>
+        <select id="hType">
+          <option value="LOC매수">LOC매수</option>
+          <option value="LOC매도">LOC매도</option>
+          <option value="지정가매도">지정가매도</option>
+          <option value="종가매도">종가매도</option>
+        </select>
+        <input type="number" id="hPrice" inputmode="decimal" step="0.01" placeholder="가격" required>
+        <input type="number" id="hQty" inputmode="numeric" step="1" placeholder="수량" required>
+        <button type="submit" class="btn">추가</button>
+      </form>
+      <p class="hint">이력을 추가하면 평단·수량·진행률이 자동 재계산됩니다. 이력이 없으면 위 설정값을 그대로 사용합니다.</p>
+      <table class="orders hist" id="histTable">
+        <thead><tr><th>날짜</th><th>구분</th><th>유형</th><th class="num">가격</th><th class="num">수량</th><th class="num">평단</th><th class="num">수량계</th><th></th></tr></thead>
+        <tbody></tbody>
+      </table>
+      <div class="hist-foot">
+        <span id="realizedPnl" class="hint"></span>
+        <button type="button" id="clearHist" class="btn btn-ghost">이력 전체 삭제</button>
+      </div>
+    </section>
+
+    <!-- 7. 파일 백업 (JSON) -->
+    <section class="card">
+      <h2>파일 백업 (JSON)</h2>
+      <div class="drive-actions">
+        <button type="button" id="jsonExport" class="btn">내보내기</button>
+        <button type="button" id="jsonImport" class="btn btn-ghost">가져오기</button>
+        <input type="file" id="jsonFile" accept="application/json,.json" hidden>
+      </div>
+      <p class="hint" id="jsonStatus">설정·거래 이력을 JSON 파일로 저장하고 다른 기기에서 불러옵니다. (Google 설정 불필요)</p>
+    </section>
+
+    <!-- 8. Google Drive 동기화 -->
+    <section class="card">
+      <h2>Google Drive 동기화</h2>
+      <label>Google OAuth Client ID
+        <input type="text" id="gClientId" placeholder="xxxx.apps.googleusercontent.com" autocomplete="off">
+      </label>
+      <div class="drive-actions">
+        <button type="button" id="gConnect" class="btn">연결</button>
+        <button type="button" id="gBackup" class="btn btn-ghost" disabled>Drive에 백업</button>
+        <button type="button" id="gRestore" class="btn btn-ghost" disabled>Drive에서 복원</button>
+        <button type="button" id="gSignout" class="btn btn-ghost" disabled>연결 해제</button>
+      </div>
+      <label class="checkbox">
+        <input type="checkbox" id="gAutoSync"> 변경 시 자동 백업
+      </label>
+      <p class="hint" id="gStatus">연결되지 않음. 설정·거래 이력을 본인 Google Drive에 백업/복원합니다.</p>
+      <p class="hint">설정 방법은 <a href="README.md#google-drive-동기화-설정" target="_blank" rel="noopener">README</a> 참고. (Finnhub 키는 동기화되지 않습니다.)</p>
+    </section>
+
+    <footer class="app-footer">
+      <p>계산 참고용 도구입니다. 실제 주문 전 반드시 값을 검토하세요.</p>
+    </footer>
+  </div>
+
+  <script src="calc.js"></script>
+  <script src="storage.js"></script>
+  <script src="price.js"></script>
+  <script src="history.js"></script>
+  <script src="chart.js"></script>
+  <script src="gdrive.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
