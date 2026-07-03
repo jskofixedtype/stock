@@ -107,7 +107,9 @@
     var bt = $('buyTable').querySelector('tbody');
     var st = $('sellTable').querySelector('tbody');
     bt.innerHTML = ''; st.innerHTML = '';
-    orders.buys.forEach(function (o) { bt.appendChild(orderRow(o)); });
+    // 매수 테이블은 지정가 내림차순으로 정렬해 표시
+    orders.buys.slice().sort(function (a, b) { return b.price - a.price; })
+      .forEach(function (o) { bt.appendChild(orderRow(o)); });
     orders.sells.forEach(function (o) { st.appendChild(orderRow(o)); });
     if (!orders.sells.length) {
       st.innerHTML = '<tr><td colspan="5" class="hint">첫날에는 매도 주문이 없습니다.</td></tr>';
